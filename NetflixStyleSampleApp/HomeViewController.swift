@@ -10,6 +10,7 @@ import SwiftUI
 
 class HomeViewController: UICollectionViewController {
     var contents: [Content] = []
+    var mainItem: Item?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -27,10 +28,12 @@ class HomeViewController: UICollectionViewController {
         collectionView.backgroundColor = .clear
         //Data 설정, 가져오기
         contents = getContents()
+        mainItem = contents.first?.contentItem.randomElement()
         
         // CollectionView Item(Cell) 설정
         collectionView.register(ContentCollectionViewCell.self, forCellWithReuseIdentifier: "ContentCollectionViewCell")
         collectionView.register(ContentCollectionViewRankCell.self, forCellWithReuseIdentifier: "ContentCollectionViewRankCell")
+        collectionView.register(ContentCollectionViewMainCell.self, forCellWithReuseIdentifier: "ContentCollectionViewMainCell")
         collectionView.register(ContentCollectionViewHeader.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: "ContentCollectionViewHeader")
         
         collectionView.collectionViewLayout = layout()
@@ -55,6 +58,8 @@ class HomeViewController: UICollectionViewController {
                 return self.createLargeTypeSection()
             case .rank:
                 return self.createRankTypeSection()
+            case .main:
+                return self.createMainTypeSection()
             default:
                 return nil
             }
@@ -120,6 +125,20 @@ class HomeViewController: UICollectionViewController {
         return section
     }
     
+    //Main Section Layout
+    private func createMainTypeSection() -> NSCollectionLayoutSection {
+        //item
+        let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .fractionalHeight(1))
+        let item = NSCollectionLayoutItem(layoutSize: itemSize)
+        //group
+        let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .absolute(450))
+        let group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
+        //section
+        let section = NSCollectionLayoutSection(group: group)
+        section.contentInsets = .init(top: 0, leading: 0, bottom: 20, trailing: 0)
+        return section
+    }
+    
     //SectionHeader layout 설정
     private func createSectionHeader() -> NSCollectionLayoutBoundarySupplementaryItem {
         //Section Header 사이즈
@@ -136,15 +155,12 @@ class HomeViewController: UICollectionViewController {
 extension HomeViewController {
     // 섹션당 보여질 셀의 개수
     override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        if contents[section].sectionType == .basic || contents[section].sectionType == .large || contents[section].sectionType == .rank {
-            switch section {
-            case 0:
-                return 1
-            default:
-                return contents[section].contentItem.count
-            }
+        switch section {
+        case 0:
+            return 1
+        default:
+            return contents[section].contentItem.count
         }
-        return 0
     }
     
     // 콜렉션뷰 셀 설정
@@ -159,6 +175,11 @@ extension HomeViewController {
             guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "ContentCollectionViewRankCell", for: indexPath) as? ContentCollectionViewRankCell else { return UICollectionViewCell()}
             cell.imageView.image = contents[indexPath.section].contentItem[indexPath.row].image
             cell.rankLabel.text = String(describing: indexPath.row + 1)
+            return cell
+        case .main:
+            guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "ContentCollectionViewMainCell", for: indexPath) as? ContentCollectionViewMainCell else { return UICollectionViewCell()}
+            cell.imageView.image = mainItem?.image
+            cell.descriptionLabel.text = mainItem?.description
             return cell
         default:
             return UICollectionViewCell()
